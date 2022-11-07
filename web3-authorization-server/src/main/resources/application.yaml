@@ -1,0 +1,16 @@
+server:
+  port: 9080
+
+# List of NFTs mapped with granted authorities
+NFTs:
+#  - "0x619a83c9368ada9ffb98c3f14b662724dd19e943"
+#  - "0xc83003b2ad5c3ef3e93cc3ef0a48e84dc8dbd718"
+
+# Host of a node in Blockchain network - It can be a proxy like infura -
+nodeHost: "http://127.0.0.1:8545"
+
+# Chain id of the Blockchain network
+chainId: 1337
+
+# Private key of the account that will be used to create the sandbox (if necessary, when the NFTs property is null or empty)
+mainAccount: "0x8f2a55949038a9610f50fb23b5883af3b4ecb3c3bb792cbcefbd1542c692be63"

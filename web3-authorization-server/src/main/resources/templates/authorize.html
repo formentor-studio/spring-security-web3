@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <title>web3-authorization-server</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <script src="js/vendor/web3/dist/web3.min.js"></script>
+    <script src="js/vendor/metamask-onboarding/dist/metamask-onboarding.bundle.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style type="text/tailwindcss">
+    </style>
+
+    <script th:inline="javascript">
+        let web3
+        let providerAddress
+
+        async function handleOnLoad() {
+          await initWeb3()
+          const params = new URLSearchParams(window.location.search)
+          handleOnTokenChanged(params.get('token'))
+        }
+
+        async function initWeb3() {
+          if (window.ethereum) {
+            web3 = new Web3(window.ethereum);
+            const accounts = await web3.eth.getAccounts();
+            handleOnChangeAddress(web3.utils.toChecksumAddress(accounts[0]));
+            subscribeProvider(window.ethereum);
+          }
+        }
+
+        function handleOnTokenChanged(token) {
+          if (token) {
+            const shortAddress = !providerAddress? '': providerAddress.substring(0, 6) + '...' + providerAddress.substring(38);
+            const encodedPayload = token.split('.')[1]
+            const payload = JSON.parse(window.atob(encodedPayload))
+            const { scope } = payload
+            document.getElementById("tokenTitle").innerHTML = (scope && scope.length)?`The roles of ${shortAddress} are:`: `${shortAddress} do not have any role`
+            document.getElementById("tokenScopes").innerHTML = payload.scope.join(",")
+            document.getElementById("token").style.display = 'block'
+
+          } else {
+            document.getElementById("token").style.display = 'none'
+          }
+
+        }
+
+        async function connectWeb3() {
+          await unLaunchWeb3();
+
+          if (window.ethereum) {
+            web3 = new Web3(window.ethereum);
+            try {
+              // ask user permission to access his accounts
+              await window.ethereum.request({ method: "eth_requestAccounts" });
+            } catch (error) {
+              console.log(error);
+              return;
+            }
+          } else {
+            const onboarding = new MetaMaskOnboarding();
+            console.warn("Metamask required, launching onboarding")
+            onboarding.startOnboarding();
+            return;
+          }
+
+          const accounts = await web3.eth.getAccounts();
+          handleOnChangeAddress(web3.utils.toChecksumAddress(accounts[0]));
+          subscribeProvider(window.ethereum);
+        }
+
+        async function unLaunchWeb3() {
+          if (web3) {
+            window.ethereum.removeAllListeners();
+            web3 = undefined;
+            handleOnChangeAddress();
+          }
+        }
+
+        const subscribeProvider = (provider) => {
+          if (!provider.on) {
+            return;
+          }
+
+          provider.on('accountsChanged', async (accounts) => {
+            handleOnChangeAddress(web3.utils.toChecksumAddress(accounts[0]));
+          });
+        };
+
+        function handleOnChangeAddress(address) {
+          providerAddress = address;
+          document.getElementById("authorizationWeb3").style.display = address? "block": "none"
+          document.getElementById("connectWeb3").style.display = address? "none": "block"
+
+          document.getElementById("token").style.display = "none"
+        }
+
+        async function signMessage(message) {
+          const sig = await web3.eth.personal.sign(message, providerAddress);
+
+          return {
+            message,
+            identity: providerAddress,
+            v: `0x${sig.substr(130,2)}`,
+            r: `0x${sig.substr(2,64)}`,
+            s: `0x${sig.substr(66,64)}`
+          }
+        }
+
+        async function getAuthorization() {
+          const message = [[${toBeSigned}]]
+            if (!providerAddress) {
+               connectWeb3()
+            } else {
+                const signature = await signMessage(message)
+                setInputValue('identity', signature.identity)
+                setInputValue('message', signature.message)
+                setInputValue('v', signature.v)
+                setInputValue('r', signature.r)
+                setInputValue('s', signature.s)
+
+                document.forms["formGetAuthorization"].submit();
+            }
+        }
+
+        function setInputValue(input, value) {
+          document.getElementById(input).value = value
+        }
+    </script>
+</head>
+<body onload="handleOnLoad()">
+<div class="container p-4 mx-auto text-center flex flex-col h-screen items-center justify-center">
+    <section class="mb-8">
+        <div id="token" style="display: none;">
+            <span id="tokenTitle" class="font-bold text-xl">Roles</span>
+            <span id="tokenScopes" class="font-bold text-gray-500 text-xl">Level-A</span>
+        </div>
+    </section>
+    <section>
+        <h1 class="font-bold text-3xl mb-4">
+            <a id="authorizationWeb3" onclick="getAuthorization()" style="display: none" class="js-btn flex items-center bg-[#9366bc] text-white py-3 px-4 rounded cursor-pointer">Get Web3 authorization</a>
+            <a id="connectWeb3" onclick="connectWeb3()" style="display: none" class="js-btn flex items-center bg-[#9366bc] text-white py-3 px-4 rounded cursor-pointer">Connect Web3</a>
+        </h1>
+        <form
+                name="formGetAuthorization"
+                action='http://localhost:9080/token'
+                method='post'
+                acceptCharset='UTF-8'
+        >
+            <input type='hidden' id='identity' name='identity' />
+            <input type='hidden' id='message' name='message' />
+            <input type='hidden' id='v' name='v' />
+            <input type='hidden' id='r' name='r' />
+            <input type='hidden' id='s' name='s' />
+            <input type='hidden' name='callback' value="http://localhost:9080/authorize" />
+        </form>
+    </section>
+</div>
+</body>
+
+</html>

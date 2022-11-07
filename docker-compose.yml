@@ -1,0 +1,10 @@
+version: "3.8"
+services:
+  besu:
+    build:
+      context: ./docker/besu
+      dockerfile: Dockerfile
+    command: --miner-enabled --miner-coinbase=0xfe3b557e8fb62b89f4916b721be55ceb828dbd73 --rpc-http-cors-origins="all" --host-allowlist="*" --rpc-ws-enabled --rpc-http-enabled
+    ports:
+      - 8545:8545
+      - 8546:8546

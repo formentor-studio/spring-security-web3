@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>spring-security-web3</artifactId>
+        <groupId>org.formentor.web3</groupId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>dapp</artifactId>
+
+    <properties>
+        <web3j.version>4.9.4</web3j.version>
+        <web3j-maven-plugin.version>4.9.4</web3j-maven-plugin.version>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.web3j</groupId>
+            <artifactId>core</artifactId>
+            <version>${web3j.version}</version>
+        </dependency>
+    </dependencies>
+    <build>
+        <plugins>
+            <!--
+            web3-maven-plugin
+            mvn web3j:generate-sources
+            -->
+            <plugin>
+                <groupId>org.web3j</groupId>
+                <artifactId>web3j-maven-plugin</artifactId>
+                <version>${web3j-maven-plugin.version}</version>
+                <configuration>
+                    <packageName>org.formentor.web3.dapp</packageName>
+                    <sourceDestination/>
+                    <nativeJavaType>true</nativeJavaType>
+                    <outputFormat>java,abi,bin</outputFormat>
+                    <soliditySourceFiles>
+                        <directory>src/main/resources/contracts</directory>
+                        <includes>
+                            <include>**/*.sol</include>
+                        </includes>
+                    </soliditySourceFiles>
+                    <abiSourceFiles>
+                        <directory>src/main/resources/ethereum/abi</directory>
+                        <includes>
+                            <include>**/*.json</include>
+                        </includes>
+                    </abiSourceFiles>
+                    <outputDirectory>
+                        <java>src/main/java</java>
+                        <bin>src/main/resources/ethereum/build/bin</bin>
+                        <abi>src/main/resources/ethereum/build/abi</abi>
+                    </outputDirectory>
+                    <contract>
+                        <includes />
+                        <excludes />
+                    </contract>
+                    <pathPrefixes>
+                        <pathPrefix>dep=../dependencies</pathPrefix>
+                    </pathPrefixes>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
